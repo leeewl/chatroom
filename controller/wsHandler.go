@@ -68,6 +68,7 @@ func (conn *connection) read() {
 			cHub.broadcast <- broadcastData
 		case typeLogin:
 			conn.data.Content = conn.data.User
+			fmt.Println(conn.data)
 			broadcastData, _ := json.Marshal(conn.data)
 			cHub.broadcast <- broadcastData
 		case typeLogout:
@@ -127,6 +128,14 @@ func RunConnHub() {
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in wsHandler")
+
+	url := r.URL
+	query := url.Query()
+
+	// 只返回第一个值
+	name := query.Get("name")
+	room := query.Get("room")
+	log.Println("name " + name + "room " + room)
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)

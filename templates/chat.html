@@ -56,53 +56,74 @@
                 return false
             });
 
+            $("#roomform").submit(function () {
+                console.log(uname);
+                console.log(room_name.val());
+                console.log(room_name.val());
+                if (!room_name.val()) {
+                    return false;
+                }
+                console.log(room_name.val());
+                joinInGroup(uname,room_name.val())
+                console.log(room_name.val());
+                room_name.val("");
+                console.log(room_name.val());
+                return false
+            });
+
             function sendMsg(msg) {
                 var data = JSON.stringify(msg);
                 conn.send(data);
             }
 
             // 加入分组，才建立websocket连接
-            function joinInGroup(){
+            function joinInGroup(name,room){
+                console.log("AAAAAAAAAA");
                 if (window["WebSocket"]) {
-                //conn = new WebSocket("ws://{{$}}/ws");
-                conn = new WebSocket("ws://localhost:8080/ws");
-                conn.onclose = function (evt) {
-                    appendLog($("<div><b>Connection closed.</b></div>"))
-                }
-                conn.onmessage = function (evt) {
-                    var msg = JSON.parse(evt.data);
-                    var sender, user_name, name_list, change_type;
-
-                    switch (msg.type) {
-                        case 'system':
-                            sender = '系统消息: ';
-                            break;
-                        case 'user':
-                            sender = msg.from + ":";
-                            break;
-                        case 'handshake':
-                            var user_info = { 'type': 'login', 'content': uname };
-                            sendMsg(user_info);
-                            return;
-                        case 'login':
-                        case 'logout':
-                            user_name = msg.content;
-                            name_list = msg.user_list;
-                            change_type = msg.type;
-                            dealUser(user_name, change_type, name_list);
-                            return;
+                    // 删除旧的链接
+                    if (!conn) {
+                        conn.close()
                     }
-                    var data = sender + msg.content;
+                    console.log("AAAAAAAAAA");
+                    //conn = new WebSocket("ws://{{$}}/ws");
+                    // 名字和组传过去
+                    conn = new WebSocket("ws://localhost:8080/ws?name=" + name + "&room=" + room);
+                    conn.onclose = function (evt) {
+                        appendLog($("<div><b>Connection closed.</b></div>"))
+                    }
+                    conn.onmessage = function (evt) {
+                        var msg = JSON.parse(evt.data);
+                        var sender, user_name, name_list, change_type;
 
-                    //appendLog($("<div/>").text(evt.data))
-                    appendLog($("<div/>").text(data))
+                        switch (msg.type) {
+                            case 'system':
+                                sender = '系统消息: ';
+                                break;
+                            case 'user':
+                                sender = msg.from + ":";
+                                break;
+                            case 'handshake':
+                                var user_info = { 'type': 'login', 'content': uname };
+                                sendMsg(user_info);
+                                return;
+                            case 'login':
+                            case 'logout':
+                                user_name = msg.content;
+                                name_list = msg.user_list;
+                                change_type = msg.type;
+                                dealUser(user_name, change_type, name_list);
+                                return;
+                        }
+                        var data = sender + msg.content;
+
+                        //appendLog($("<div/>").text(evt.data))
+                        appendLog($("<div/>").text(data))
+                    }
+                } else {
+                    appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
                 }
-            } else {
-                appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
             }
-
-            }
-            joinInGroup()
+            //joinInGroup()
 
             /*
             if (window["WebSocket"]) {
