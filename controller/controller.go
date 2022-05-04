@@ -6,5 +6,5 @@ func RegisterRoutes() {
 	// route
 	registerChatRoute()
 	registerWsRoute()
-	registerHelloRoute()
+	registerLoginRoute()
 }

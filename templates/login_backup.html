@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="M"><!--用div将所有东西套起来,需要设置绝对位置-->
+        <input type="button" value="登录" class="login_btn" onclick="login()"><!--触发登陆弹框按钮-->
+    </div>
+
+
+    <button οnclick='close()' id='close'>X</button>
+    <form action='https://localhost:8080/chat' method='get'>
+        <table>
+
+        </tr>
+        <tr>
+            <td colspan='2'><h2>登录到聊天室</h2></td>
+        </tr>
+        <tr>
+            <td class='lable'>
+                <label for='user'></label>用户名:
+            </td>
+            <td>
+                <input id='user' class='in' autofocus='autofocus' autocomplete=\"on\" type='text'>
+            </td>
+        </tr>
+        <tr>
+            <td class='lable'>密码:</td>
+            <td><input class='in' type='password'></td>
+        </tr>
+        <tr>
+            <td colspan='2'><div class='rem_pass' ><label><input id='chioce' type='checkbox' name='rem' value='sadasd'>记住密码</label></div><button type=\"submit\" class=\"btn btn-info\"id='btn_login' >登录</button></td>
+        </table>
+    </form>
+
+
+    <style type="text/css">
+
+#bg {/*重点:指定黑色背景覆盖在所有组件上*/
+  background-color: rgba(0, 0, 0, 0.5); /*0.5为透明度*/
+  position: fixed;/*绝对位置*/
+  z-index: 999;/*显示在最高层*/
+}
+
+* {/*去掉外边界*/
+  margin: 0;
+  padding: 0;
+}
+#M {/*重点:装所有东西,再将此div设置为绝对位置,方便写弹出界面,宽度别忘了,否则可能乱布局*/
+  position: absolute;
+  width: 100%;
+}
+
+#close {/*不重要:弹框右上角的x样式*/
+  border: none;
+  background-color: white;
+  float: right;
+  margin-right: 20px;
+  margin-top: 15px;
+  font-size: 20px;
+}
+#login {/*重要:登录框*/
+  border-radius: 20px;
+  background-color: white;
+  position: fixed;/*重点绝对布局*/
+  box-shadow: 0 0 10px 2px gray;
+  width: 400px;
+  height: 300px;
+  z-index: 1000;/*重点显示在背景层之上,该属性大于背景的该属性*/
+  left: 55%;
+  top: 60%;
+  margin-left: -250px;
+  margin-top: -250px;
+}
+/*以下不是重点,登陆框中的具体内容*/
+#login form {
+  margin-top: 50px;
+}
+#login form table {
+  margin: 0 auto;
+}
+#login form table tr td {
+  text-align: center;
+  border: none;
+  padding: 5px;
+}
+#login form table tr td .rem_pass {
+  font-size: 12px;
+  float: left;
+  margin-top: 10px;
+  margin-left: 30px;
+}
+#login form table tr td .rem_pass input {
+  height: 15px;
+  vertical-align: bottom;
+  margin-bottom: 1px;
+  margin-top: -1px;
+}
+#login form table tr .lable {
+  text-align: right;
+}
+#login form table tr #btn_login {
+  background-color: black;
+  margin-right: 60px;
+}
+.login_btn {
+  z-index: 1;
+  margin: 0 auto;
+}
+/*# sourceMappingURL=login.css.map */
+    </style>
+    
+<script type="text/javascript">
+    function login() {
+        //生成背景div和登录框div并添加到body中
+        var swidth = window.screen.width;
+        var sheight = window.screen.height;
+        var bg = document.createElement("div");
+        bg.id = "bg";
+        bg.style.width = swidth + "px";
+        bg.style.height = sheight + "px";
+        document.body.appendChild(bg);
+        var login = document.createElement("div");
+        login.id = "login"
+        //这里下边一条用于设置登陆框中的内容,不重要
+        login.innerHTML="<button οnclick='close()' id='close'>X</button><form action='https://localhost:8080/chat' method='get'><table></tr><tr><td colspan='2'><h2>登录到聊天室</h2></td></tr><tr><td class='lable'><label for='user'></label>用户名:</td><td><input id='user' class='in' autofocus='autofocus' autocomplete=\"on\" type='text'></td></tr><tr><td class='lable'>密码:</td><td><input class='in' type='password'></td></tr><tr><td colspan='2'><div class='rem_pass' ><label><input id='chioce' type='checkbox' name='rem' value='sadasd'>记住密码</label></div><button type=\"submit\" class=\"btn btn-info\"id='btn_login' >登录</button></td></table></form>"
+        document.body.appendChild(login);
+        //不重要:设置关闭按钮和点击背景触发关闭事件
+        var close = document.getElementById("close");
+        close.onclick = bg.onclick = function () {
+            document.body.removeChild(bg);
+            document.body.removeChild(login);
+        }
+        var loginBtn = document.getElementById("btn_login");
+        loginBtn.onclick = function () {
+        var pwInput = document.getElementById("posswd").value;
+        var ttttest = loginBtn.val()
+        //var pwInput = document.getElementById("btn_login").value;
+        //var userInput = document.getElementById("user").value;
+        //window.navigate("localhost:8080/chat?name="+ userInput +"&pw=" + pwInput);
+        //alter("localhost:8080/chat?name="+ userInput +"&pw=" + pwInput);
+        alter("localhost:8080/chat?name=");
+        }
+
+    };
+
+    /*
+    window.onload = function(){
+        var btn = document.getElementById("login");
+        btn.onclick=function(){
+            login();
+            return false;
+        }
+    }
+    */
+    </script>
+</body>
+</html>

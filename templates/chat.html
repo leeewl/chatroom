@@ -1,201 +1,261 @@
 <html>
+
 <head>
-<title>Chat Room</title>
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script type="text/javascript">
-    $(function() {
-
-    var conn;
-    var msg = $("#msg");
-    var room_name = $("#room_name");
-    var log = $("#log");
-
-    var uname = "uuuuname";
-
-    function appendLog(msg) {
-        var d = log[0]
-        var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
-        msg.appendTo(log)
-        if (doScroll) {
-            d.scrollTop = d.scrollHeight - d.clientHeight;
-        }
-    }
-
-    $("#sendform").submit(function() {
-        if (!conn) {
-            return false;
-        }
-        if (!msg.val()) {
-            return false;
-        }
-        var sendInfo = {"content": msg.val(), "type":"user"};
-        sendMsg(sendInfo);
-        msg.val("");
-        return false
-    });
-
-    function sendMsg(msg) {
-        var data = JSON.stringify(msg);
-        conn.send(data);
-    }
-
-    if (window["WebSocket"]) {
-        //conn = new WebSocket("ws://{{$}}/ws");
-        conn = new WebSocket("ws://localhost:8080/ws");
-        conn.onclose = function(evt) {
-            appendLog($("<div><b>Connection closed.</b></div>"))
-        }
-        conn.onmessage = function(evt) {
-            var msg = JSON.parse(evt.data);
-            var sender,user_name, name_list, change_type;
-
-            switch (msg.type) {
-                case 'system':
-                    sender = '系统消息: ';
-                    break;
-                case 'user':
-                    sender = msg.from + ":";
-                    break;
-                case 'handshake':
-                    var user_info = {'type':'login','content':uname};
-                    sendMsg(user_info);
-                    return;
-                case 'login':
-                case 'logout':
-                    user_name = msg.content;
-                    name_list = msg.user_list;
-                    change_type = msg.type;
-                    dealUser(user_name, change_type,name_list);
-                    return;
-            }
-            var data = sender + msg.content;
-
-            //appendLog($("<div/>").text(evt.data))
-            appendLog($("<div/>").text(data))
-        }
-    } else {
-        appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
-    }
-
-    function dealUser(user_name, type, name_list) {
-        var user_list = document.getElementById("user_list");
-        while(user_list.hasChildNodes()){
-            user_list.removeChild(user_list.firstChild);
-        }
-        for (var index in name_list) {
-            var user = document.createElement("p");
-            user.innerHTML = name_list[index];
-            user_list.appendChild(user);
-        }
-
-        user_list.scrollTop = user_list.scrollHeight;
-        var change = type == 'login' ? '上线' : '下线';
-        var data = '系统消息 :' + user_name + ' 已' + change;
-        appendLog($("<div/>").text(data))
-    }
-
-
-
-    });
-</script>
-<style type="text/css">
-html {
-    overflow: hidden;
-}
-
-body {
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    background: gray;
-}
-
-#messageform {
-    background: rgb(108, 101, 101);
-    margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    top: 0.5em;
-    left: 0.5em;
-    right:0.5em;
-    bottom: 8em;
-    overflow: auto;
-}
-
-#log {
-    background: white;
-    margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    top: 0.5em;
-    left: 0.5em;
-    width: 60%;
-    bottom: 3em;
-    overflow: auto;
-}
-
-#roomform {
-    padding: 0 0.5em 0 0.5em;
-    margin: 0;
-    position: absolute;
-    bottom: 4em;
-    left: 0px;
-    width: 100%;
-    overflow: hidden;
-}
-
-#sendform {
-    padding: 0 0.5em 0 0.5em;
-    margin: 0;
-    position: absolute;
-    bottom: 1em;
-    left: 0px;
-    width: 100%;
-    overflow: hidden;
-}
-
-#userlist {
-    background: white;
-    margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    right: 0.5em;
-    width: 35%;
-    height: 40%;
-    bottom: 3em;
-    overflow: auto;
-}
-
-#roomlist {
-    background: white;
-    margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
-    width: 35%;
-    height: 40%;
-    overflow: auto;
-}
-
-
-</style>
+    <title>Chat Room</title>
 </head>
+
 <body>
-<form id="messageform">
-    <div id="log"></div>
-    <div id="userlist"></div>
-    <div id="roomlist"></div>
-</form>
-<form id="roomform">
-    <input type="text" id="room_name" size="64"/>
-    <input type="submit" value="enter room" />
-</form>
-<form id="sendform">
-    <input type="text" id="msg" size="64"/>
-    <input type="submit" value="Send" />
-</form>
+    <form id="topform" style="float:left;">
+        <div>用户名 :  </div>
+        <div id="user_name">{{ . }}</div>
+    </form>
+    <form id="messageform">
+        <div id="log"></div>
+        <div id="userlist"></div>
+        <div id="roomlist"></div>
+    </form>
+    <form id="roomform">
+        <input type="text" id="room_name" size="64" />
+        <input type="submit" value="enter room" />
+    </form>
+    <form id="sendform">
+        <input type="text" id="msg" size="64" />
+        <input type="submit" value="Send" />
+    </form>
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+
+            var conn;
+            var msg = $("#msg");
+            var room_name = $("#room_name");
+            var log = $("#log");
+            var user_name = $("#user_name");
+            var uname = document.getElementById("user_name").innerHTML;
+
+            function appendLog(msg) {
+                var d = log[0]
+                var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
+                msg.appendTo(log)
+                if (doScroll) {
+                    d.scrollTop = d.scrollHeight - d.clientHeight;
+                }
+            }
+
+            $("#sendform").submit(function () {
+                if (!conn) {
+                    return false;
+                }
+                if (!msg.val()) {
+                    return false;
+                }
+                var sendInfo = { "content": msg.val(), "type": "user" , "user":uname};
+                sendMsg(sendInfo);
+                msg.val("");
+                return false
+            });
+
+            function sendMsg(msg) {
+                var data = JSON.stringify(msg);
+                conn.send(data);
+            }
+
+            // 加入分组，才建立websocket连接
+            function joinInGroup(){
+                if (window["WebSocket"]) {
+                //conn = new WebSocket("ws://{{$}}/ws");
+                conn = new WebSocket("ws://localhost:8080/ws");
+                conn.onclose = function (evt) {
+                    appendLog($("<div><b>Connection closed.</b></div>"))
+                }
+                conn.onmessage = function (evt) {
+                    var msg = JSON.parse(evt.data);
+                    var sender, user_name, name_list, change_type;
+
+                    switch (msg.type) {
+                        case 'system':
+                            sender = '系统消息: ';
+                            break;
+                        case 'user':
+                            sender = msg.from + ":";
+                            break;
+                        case 'handshake':
+                            var user_info = { 'type': 'login', 'content': uname };
+                            sendMsg(user_info);
+                            return;
+                        case 'login':
+                        case 'logout':
+                            user_name = msg.content;
+                            name_list = msg.user_list;
+                            change_type = msg.type;
+                            dealUser(user_name, change_type, name_list);
+                            return;
+                    }
+                    var data = sender + msg.content;
+
+                    //appendLog($("<div/>").text(evt.data))
+                    appendLog($("<div/>").text(data))
+                }
+            } else {
+                appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
+            }
+
+            }
+            joinInGroup()
+
+            /*
+            if (window["WebSocket"]) {
+                //conn = new WebSocket("ws://{{$}}/ws");
+                conn = new WebSocket("ws://localhost:8080/ws");
+                conn.onclose = function (evt) {
+                    appendLog($("<div><b>Connection closed.</b></div>"))
+                }
+                conn.onmessage = function (evt) {
+                    var msg = JSON.parse(evt.data);
+                    var sender, user_name, name_list, change_type;
+
+                    switch (msg.type) {
+                        case 'system':
+                            sender = '系统消息: ';
+                            break;
+                        case 'user':
+                            sender = msg.from + ":";
+                            break;
+                        case 'handshake':
+                            var user_info = { 'type': 'login', 'content': uname };
+                            sendMsg(user_info);
+                            return;
+                        case 'login':
+                        case 'logout':
+                            user_name = msg.content;
+                            name_list = msg.user_list;
+                            change_type = msg.type;
+                            dealUser(user_name, change_type, name_list);
+                            return;
+                    }
+                    var data = sender + msg.content;
+
+                    //appendLog($("<div/>").text(evt.data))
+                    appendLog($("<div/>").text(data))
+                }
+            } else {
+                appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
+            }
+            */
+
+            function dealUser(user_name, type, name_list) {
+                /*
+                var user_list = document.getElementById("user_list");
+                while (user_list.hasChildNodes()) {
+                    user_list.removeChild(user_list.firstChild);
+                }
+                for (var index in name_list) {
+                    var user = document.createElement("p");
+                    user.innerHTML = name_list[index];
+                    user_list.appendChild(user);
+                }
+
+                user_list.scrollTop = user_list.scrollHeight;
+                */
+                var change = type == 'login' ? '上线' : '下线';
+                var data = '系统消息 :' + user_name + ' 已' + change;
+                appendLog($("<div/>").text(data))
+            }
+
+        });
+    </script>
+    <style type="text/css">
+        html {
+            overflow: hidden;
+        }
+
+        body {
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: gray;
+        }
+
+        #topform {
+            background:rgb(224, 235, 234);
+            display: inline;
+            top:0.5em;
+            left: 0px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #messageform {
+            background: rgb(108, 101, 101);
+            margin: 0;
+            padding: 0.5em 0.5em 0.5em 0.5em;
+            position: absolute;
+            top: 4em;
+            left: 0.5em;
+            right: 0.5em;
+            bottom: 8em;
+            overflow: auto;
+        }
+
+        #log {
+            background: white;
+            margin: 0;
+            padding: 0.5em 0.5em 0.5em 0.5em;
+            position: absolute;
+            top: 0.5em;
+            left: 0.5em;
+            width: 60%;
+            bottom: 3em;
+            overflow: auto;
+        }
+
+        #roomform {
+            padding: 0 0.5em 0 0.5em;
+            margin: 0;
+            position: absolute;
+            bottom: 4em;
+            left: 0px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #sendform {
+            padding: 0 0.5em 0 0.5em;
+            margin: 0;
+            position: absolute;
+            bottom: 1em;
+            left: 0px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #userlist {
+            background: white;
+            margin: 0;
+            padding: 0.5em 0.5em 0.5em 0.5em;
+            position: absolute;
+            right: 0.5em;
+            width: 35%;
+            height: 40%;
+            bottom: 3em;
+            overflow: auto;
+        }
+
+        #roomlist {
+            background: white;
+            margin: 0;
+            padding: 0.5em 0.5em 0.5em 0.5em;
+            position: absolute;
+            top: 0.5em;
+            right: 0.5em;
+            width: 35%;
+            height: 40%;
+            overflow: auto;
+        }
+    </style>
 </body>
+
 </html>
