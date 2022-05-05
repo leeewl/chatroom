@@ -36,11 +36,11 @@ type Data struct {
 }
 
 type connection struct {
-	conn      *websocket.Conn
-	send      chan []byte
-	data      *Data
-	room_list []int
-	room_cur  int
+	conn *websocket.Conn
+	send chan []byte
+	data *Data
+	room int
+	//room_list []int
 }
 
 type userName string
@@ -65,7 +65,7 @@ func (conn *connection) read() {
 		_, message, err := conn.conn.ReadMessage()
 		// 数据错误，下线
 		if err != nil {
-			cHub.unRegisterConn <- conn
+			conn.unRegister()
 			break
 		}
 
@@ -77,17 +77,19 @@ func (conn *connection) read() {
 		case typeUser:
 			conn.data.From = conn.data.User
 			broadcastData, _ := json.Marshal(conn.data)
-			cHub.broadcast <- broadcastData
+			conn.broadcast(broadcastData)
+		case typeHandshake:
+			// 用户选择分组时
 		case typeLogin:
 			conn.data.Content = conn.data.User
 			fmt.Println(conn.data)
 			broadcastData, _ := json.Marshal(conn.data)
-			cHub.broadcast <- broadcastData
+			conn.broadcast(broadcastData)
 		case typeLogout:
 			conn.data.Content = conn.data.User
 			broadcastData, _ := json.Marshal(conn.data)
-			cHub.broadcast <- broadcastData
-			cHub.unRegisterConn <- conn
+			conn.broadcast(broadcastData)
+			conn.unRegister()
 		default:
 			log.Fatalln(" other type ", conn.data.Type)
 		}
@@ -98,11 +100,42 @@ func (conn *connection) write() {
 	for message := range conn.send {
 		err := conn.conn.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			cHub.unRegisterConn <- conn
+			conn.unRegister()
 			break
 		}
 	}
 	conn.conn.Close()
+}
+
+func (conn *connection) register() {
+	if conn.room <= 0 {
+		return
+	}
+	if _, ok := rHub.roomMap[conn.room]; !ok {
+		return
+	}
+	rHub.roomMap[conn.room].registerConn <- conn
+}
+
+func (conn *connection) unRegister() {
+	if conn.room <= 0 {
+		return
+	}
+	if _, ok := rHub.roomMap[conn.room]; !ok {
+		return
+	}
+	rHub.roomMap[conn.room].unRegisterConn <- conn
+}
+
+func (conn *connection) broadcast(data []byte) {
+	if conn.room <= 0 {
+		return
+	}
+	if _, ok := rHub.roomMap[conn.room]; !ok {
+		return
+	}
+	rHub.roomMap[conn.room].broadcast <- data
+
 }
 
 var cHub = connHub{
@@ -153,8 +186,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 只返回第一个值
 	name := query.Get("name")
-	room := query.Get("room")
-	log.Println("name " + name + "room " + room)
+	uid := query.Get("uid")
+	log.Println("name " + name + "uid " + uid)
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -162,21 +195,22 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn := &connection{
-		conn:      ws,
-		send:      make(chan []byte, 128),
-		data:      &Data{},
-		room_list: make([]int, 1),
-		room_cur:  0,
+		conn: ws,
+		send: make(chan []byte, 128),
+		data: &Data{},
+		room: 0,
+		//room_list: make([]int, 1),
 	}
 
-	cHub.registerConn <- conn
+	// 进入聊天界面不注册了，进入房间才注册
+	//cHub.registerConn <- conn
 
 	defer func() {
 		conn.data.Type = typeLogout
 		conn.data.Content = conn.data.User
 		broadcastData, _ := json.Marshal(conn.data)
-		cHub.broadcast <- broadcastData
-		cHub.unRegisterConn <- conn
+		conn.broadcast(broadcastData)
+		conn.unRegister()
 	}()
 
 	go conn.write()

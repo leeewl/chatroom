@@ -39,6 +39,8 @@
             var log = $("#log");
             var user_name = $("#user_name");
             var uname = document.getElementById("user_name").innerHTML;
+            var uid = document.getElementById("uid").innerHTML;
+
 
             function appendLog(msg) {
                 var d = log[0]
@@ -82,59 +84,18 @@
                 conn.send(data);
             }
 
-            // 加入分组，才建立websocket连接
-            function joinInGroup(name,room){
-                console.log("AAAAAAAAAA");
-                if (window["WebSocket"]) {
-                    // 删除旧的链接
-                    if (!conn) {
-                        conn.close()
-                    }
-                    console.log("AAAAAAAAAA");
-                    //conn = new WebSocket("ws://{{$}}/ws");
-                    // 名字和组传过去
-                    conn = new WebSocket("ws://localhost:8080/ws?name=" + name + "&room=" + room);
-                    conn.onclose = function (evt) {
-                        appendLog($("<div><b>Connection closed.</b></div>"))
-                    }
-                    conn.onmessage = function (evt) {
-                        var msg = JSON.parse(evt.data);
-                        var sender, user_name, name_list, change_type;
 
-                        switch (msg.type) {
-                            case 'system':
-                                sender = '系统消息: ';
-                                break;
-                            case 'user':
-                                sender = msg.from + ":";
-                                break;
-                            case 'handshake':
-                                var user_info = { 'type': 'login', 'content': uname };
-                                sendMsg(user_info);
-                                return;
-                            case 'login':
-                            case 'logout':
-                                user_name = msg.content;
-                                name_list = msg.user_list;
-                                change_type = msg.type;
-                                dealUser(user_name, change_type, name_list);
-                                return;
-                        }
-                        var data = sender + msg.content;
-
-                        //appendLog($("<div/>").text(evt.data))
-                        appendLog($("<div/>").text(data))
-                    }
-                } else {
-                    appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
-                }
-            }
-            //joinInGroup()
-
-            /*
+            // 打开页面，建立websocket连接
+            console.log("AAAAAAAAAA");
             if (window["WebSocket"]) {
+                // 删除旧的链接
+                if (!conn) {
+                    conn.close()
+                }
+                console.log("AAAAAAAAAA");
                 //conn = new WebSocket("ws://{{$}}/ws");
-                conn = new WebSocket("ws://localhost:8080/ws");
+                // 名字和组传过去
+                conn = new WebSocket("ws://localhost:8080/ws?name=" + uname + "&uid=" + uid);
                 conn.onclose = function (evt) {
                     appendLog($("<div><b>Connection closed.</b></div>"))
                 }
@@ -169,7 +130,6 @@
             } else {
                 appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
             }
-            */
 
             function dealUser(user_name, type, name_list) {
                 /*
