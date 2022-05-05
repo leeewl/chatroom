@@ -80,6 +80,7 @@ func (conn *connection) read() {
 			conn.broadcast(broadcastData)
 		case typeHandshake:
 			// 用户选择分组时
+			conn.room = conn.data.Room
 		case typeLogin:
 			conn.data.Content = conn.data.User
 			fmt.Println(conn.data)
