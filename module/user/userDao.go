@@ -1,55 +1,34 @@
 package user
 
 import (
-	"chatroom/conf"
-	"context"
-	"database/sql"
+	posgre "chatroom/lib/db/postgre"
 	"fmt"
-
-	_ "github.com/lib/pq"
 )
-
-var db *sql.DB
-
-func conDb() (err error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		conf.DB_HOST, conf.DB_PORT, conf.DB_USER, conf.DB_PASSWORD, conf.DB_NAME)
-	db, err = sql.Open(conf.DB_DRIVER, connStr)
-	if err != nil {
-		return err
-	}
-	ctx := context.Background()
-	err = db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func getOneById(id int) (c user, err error) {
 	c = user{}
-	err = conDb()
+	db, err := posgre.ConDb()
 	if err != nil {
 		return
 	}
-	row := db.QueryRow("SELECT uid, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uid=$1", id)
-	err = row.Scan(&c.uid, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
+	row := db.QueryRow("SELECT uid,passwd, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uid=$1", id)
+	err = row.Scan(&c.uid, &c.passwd, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
 	return
 }
 
 func getOneByUname(uname string) (c user, err error) {
 	c = user{}
-	err = conDb()
+	db, err := posgre.ConDb()
 	if err != nil {
 		return
 	}
 	row := db.QueryRow("SELECT uid, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uname=$1", uname)
-	err = row.Scan(&c.uid, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
+	err = row.Scan(&c.uid, &c.passwd, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
 	return
 }
 
 func (u *user) Update() (err error) {
-	err = conDb()
+	db, err := posgre.ConDb()
 	if err != nil {
 		return
 	}
@@ -63,6 +42,9 @@ func (u *user) Update() (err error) {
 /*
 // 不允许删除
 func Delete(id int) (err error) {
+	db, err := posgre.ConDb()
+	if err != nil {
+		return
 	_, err = db.Exec("DELETE FROM t_user where uid = $1", id)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -72,13 +54,13 @@ func Delete(id int) (err error) {
 */
 
 func Insert(u user) (err error) {
-	err = conDb()
+	db, err := posgre.ConDb()
 	if err != nil {
 		return
 	}
 	fmt.Println(u)
-	_, err = db.Exec("Insert into t_user (uname, create_time, ban_chat_time, ban_time) values ($1, $2,$3,$4)",
-		u.uname, u.create_time, u.ban_chat_time, u.ban_time)
+	_, err = db.Exec("Insert into t_user (uname,passwd, create_time, ban_chat_time, ban_time) values ($1, $2,$3,$4,$5)",
+		u.uname, u.passwd, u.create_time, u.ban_chat_time, u.ban_time)
 	if err != nil {
 		return
 	}

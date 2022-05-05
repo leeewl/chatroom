@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -30,22 +31,33 @@ type Data struct {
 	Ip       string   `json:"ip"`
 	From     string   `json:"from"`
 	User     string   `json:"user"`
+	Room     string   `json:"room"` //当前房间
 	UserList []string `json:"user_list"`
 }
 
 type connection struct {
-	conn *websocket.Conn
-	send chan []byte
-	data *Data
+	conn      *websocket.Conn
+	send      chan []byte
+	data      *Data
+	room_list []int
+	room_cur  int
 }
+
+type userName string
 
 // 管理链接的hub
 type connHub struct {
-	connections map[*connection]bool
+	connections map[*connection]userName
 	// 广播
 	broadcast      chan []byte
 	registerConn   chan *connection
 	unRegisterConn chan *connection
+	mu             sync.Mutex
+}
+
+type roomHub struct {
+	roomMap map[int]*connHub
+	mu      sync.Mutex
 }
 
 func (conn *connection) read() {
@@ -94,10 +106,16 @@ func (conn *connection) write() {
 }
 
 var cHub = connHub{
-	connections:    make(map[*connection]bool),
+	connections:    make(map[*connection]userName),
 	broadcast:      make(chan []byte),
 	registerConn:   make(chan *connection),
 	unRegisterConn: make(chan *connection),
+	mu:             sync.Mutex{},
+}
+
+var rHub = roomHub{
+	mu:      sync.Mutex{},
+	roomMap: make(map[int]*connHub),
 }
 
 func (ch *connHub) run() {
@@ -105,7 +123,8 @@ func (ch *connHub) run() {
 	for {
 		select {
 		case conn := <-ch.registerConn:
-			ch.connections[conn] = true
+			uname := userName(conn.data.User)
+			ch.connections[conn] = uname
 			conn.data.Type = typeHandshake
 			sigleData, _ := json.Marshal(conn.data)
 			conn.send <- sigleData
@@ -143,9 +162,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn := &connection{
-		conn: ws,
-		send: make(chan []byte, 128),
-		data: &Data{},
+		conn:      ws,
+		send:      make(chan []byte, 128),
+		data:      &Data{},
+		room_list: make([]int, 1),
+		room_cur:  0,
 	}
 
 	cHub.registerConn <- conn
@@ -160,7 +181,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	go conn.write()
 	conn.read()
-
 }
 
 func registerWsRoute() {

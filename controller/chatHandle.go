@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"chatroom/module/user"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -23,11 +24,21 @@ func chatHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.Form["name"][0]
+	uname := r.Form["name"][0]
+	// 根据用户名，找到用户id
+	uid := user.GetUidByUname(uname)
+	if uid == 0 {
+		return
+	}
+	// 传给页面的数据
+	tmpInfo := make(map[string]interface{})
+	tmpInfo["uname"] = r.Form["name"][0]
+	tmpInfo["uid"] = uid
+
 	fmt.Println(r.Form)
 	t := template.New("chat.html")
 	t, _ = t.ParseFiles("templates/chat.html")
-	t.Execute(w, name)
+	t.Execute(w, tmpInfo)
 }
 
 func registerChatRoute() {

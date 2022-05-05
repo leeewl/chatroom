@@ -6,8 +6,14 @@
 
 <body>
     <form id="topform" style="float:left;">
-        <div>用户名 :  </div>
-        <div id="user_name">{{ . }}</div>
+        <div class="app">
+            <div style="display:inline-block;">User name is: </div>
+            <div id="user_name" style="display:inline-block;margin-left:10px;">{{.uname}}</div>
+        </div>
+        <div class="app">
+            <div style="display:inline-block;">User id is: </div>
+            <div id="uid" style="display:inline-block;margin-left:10px;">{{.uid}}</div>
+        </div>
     </form>
     <form id="messageform">
         <div id="log"></div>

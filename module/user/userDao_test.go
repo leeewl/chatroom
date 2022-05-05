@@ -1,6 +1,8 @@
 package user
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestUserDaoInsert(t *testing.T) {
 	c := user{
