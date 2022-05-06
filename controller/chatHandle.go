@@ -10,7 +10,7 @@ import (
 func chatHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	// 前端提交的数据不可信，判断
-	fmt.Println(r.Form)
+	fmt.Println("chat handleeeee", r.Form)
 	if _, ok := r.Form["name"]; !ok {
 		t := template.New("nouser.html")
 		t, _ = t.ParseFiles("templates/nouser.html")
@@ -27,6 +27,7 @@ func chatHandle(w http.ResponseWriter, r *http.Request) {
 	uname := r.Form["name"][0]
 	// 根据用户名，找到用户id
 	uid := user.GetUidByUname(uname)
+	fmt.Println("uid: ", uid)
 	if uid == 0 {
 		return
 	}

@@ -21,7 +21,7 @@
         <div id="roomlist"></div>
     </form>
     <form id="roomform">
-        <input type="text" id="room_name" size="64" />
+        <input type="number" id="room_id" size="20" />
         <input type="submit" value="enter room" />
     </form>
     <form id="sendform">
@@ -29,106 +29,67 @@
         <input type="submit" value="Send" />
     </form>
 
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>-->
+    <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-1.4.2.min.js"></script>
     <script type="text/javascript">
         $(function () {
 
-            var conn;
+            //var conn;
             var msg = $("#msg");
-            var room_name = $("#room_name");
+            var room_id = $("#room_id");
             var log = $("#log");
             var user_name = $("#user_name");
             var uname = document.getElementById("user_name").innerHTML;
             var uid = document.getElementById("uid").innerHTML;
 
-
-            function appendLog(msg) {
-                var d = log[0]
-                var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
-                msg.appendTo(log)
-                if (doScroll) {
-                    d.scrollTop = d.scrollHeight - d.clientHeight;
-                }
-            }
-
-            $("#sendform").submit(function () {
-                if (!conn) {
-                    return false;
-                }
-                if (!msg.val()) {
-                    return false;
-                }
-                var sendInfo = { "content": msg.val(), "type": "user" , "user":uname};
-                sendMsg(sendInfo);
-                msg.val("");
-                return false
-            });
-
-            $("#roomform").submit(function () {
-                console.log(uname);
-                console.log(room_name.val());
-                console.log(room_name.val());
-                if (!room_name.val()) {
-                    return false;
-                }
-                console.log(room_name.val());
-                joinInGroup(uname,room_name.val())
-                console.log(room_name.val());
-                room_name.val("");
-                console.log(room_name.val());
-                return false
-            });
-
-            function sendMsg(msg) {
-                var data = JSON.stringify(msg);
-                conn.send(data);
-            }
-
-
             // 打开页面，建立websocket连接
             console.log("AAAAAAAAAA");
-            if (window["WebSocket"]) {
-                // 删除旧的链接
-                if (!conn) {
-                    conn.close()
-                }
-                console.log("AAAAAAAAAA");
-                //conn = new WebSocket("ws://{{$}}/ws");
-                // 名字和组传过去
-                conn = new WebSocket("ws://localhost:8080/ws?name=" + uname + "&uid=" + uid);
-                conn.onclose = function (evt) {
-                    appendLog($("<div><b>Connection closed.</b></div>"))
-                }
-                conn.onmessage = function (evt) {
-                    var msg = JSON.parse(evt.data);
-                    var sender, user_name, name_list, change_type;
-
-                    switch (msg.type) {
-                        case 'system':
-                            sender = '系统消息: ';
-                            break;
-                        case 'user':
-                            sender = msg.from + ":";
-                            break;
-                        case 'handshake':
-                            var user_info = { 'type': 'login', 'content': uname };
-                            sendMsg(user_info);
-                            return;
-                        case 'login':
-                        case 'logout':
-                            user_name = msg.content;
-                            name_list = msg.user_list;
-                            change_type = msg.type;
-                            dealUser(user_name, change_type, name_list);
-                            return;
-                    }
-                    var data = sender + msg.content;
-
-                    //appendLog($("<div/>").text(evt.data))
-                    appendLog($("<div/>").text(data))
-                }
-            } else {
+            if (!window["WebSocket"]) {
                 appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
+                return
+            }
+            // 删除旧的链接
+            /*
+            if (!conn) {
+                conn.close()
+            }
+            */
+            console.log("AAAAAAAAAA");
+            //conn = new WebSocket("ws://{{$}}/ws");
+            // 名字和组传过去
+            conn = new WebSocket("ws://localhost:8080/ws?name=" + uname + "&uid=" + uid);
+            conn.onclose = function (evt) {
+                appendLog($("<div><b>Connection closed.</b></div>"))
+            }
+            conn.onmessage = function (evt) {
+                var msg = JSON.parse(evt.data);
+                var sender, user_name, name_list, change_type;
+
+                switch (msg.type) {
+                    case 'system':
+                        sender = '系统消息: ';
+                        break;
+                    case 'user':
+                        sender = msg.from + ":";
+                        break;
+                    case 'handshake':
+                        console.log("in handshake");
+                        var user_info = { 'type': 'login', 'content': uname };
+                        console.log(user_info);
+                        sendMsg(user_info);
+                        return;
+                    case 'login':
+                    case 'logout':
+                        user_name = msg.content;
+                        name_list = msg.user_list;
+                        change_type = msg.type;
+                        dealUser(user_name, change_type, name_list);
+                        return;
+                }
+                var data = sender + msg.content;
+
+                //appendLog($("<div/>").text(evt.data))
+                appendLog($("<div/>").text(data))
             }
 
             function dealUser(user_name, type, name_list) {
@@ -150,6 +111,48 @@
                 appendLog($("<div/>").text(data))
             }
 
+
+            function appendLog(msg) {
+                var d = log[0]
+                var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
+                msg.appendTo(log)
+                if (doScroll) {
+                    d.scrollTop = d.scrollHeight - d.clientHeight;
+                }
+            }
+
+            $("#sendform").submit(function () {
+                if (!conn) {
+                    return false;
+                }
+                if (!msg.val()) {
+                    return false;
+                }
+                var sendInfo = { "content": msg.val(), "type": "user" , "user":uname};
+                sendMsg(sendInfo);
+                msg.val("");
+                return false;
+            });
+
+            // 连接某个房间
+            $("#roomform").submit(function () {
+                if (!conn) {
+                    return false;
+                }
+                if (!room_id.val()) {
+                    return false;
+                }
+                var sendInfo = { "room": room_id.val(), "type": "handshake" , "user":uname};
+                console.log(sendInfo);
+                sendMsg(sendInfo);
+                room_id.val("");
+                return false;
+            });
+
+            function sendMsg(msg) {
+                var data = JSON.stringify(msg);
+                conn.send(data);
+            }
         });
     </script>
     <style type="text/css">

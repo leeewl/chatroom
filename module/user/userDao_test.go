@@ -6,7 +6,8 @@ import (
 
 func TestUserDaoInsert(t *testing.T) {
 	c := user{
-		uname:         "lee",
+		uname:         "miao",
+		passwd:        "nopanic",
 		create_time:   10000,
 		ban_chat_time: 1000001,
 		ban_time:      2000,

@@ -2,9 +2,11 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -75,18 +77,27 @@ func (conn *connection) read() {
 		//case typeSystem:
 
 		case typeUser:
+			fmt.Printf("AAAAAA conn user\n")
 			conn.data.From = conn.data.User
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 		case typeHandshake:
-			// 用户选择分组时
-			conn.room = conn.data.Room
+			fmt.Printf("AAAAAA conn handshake %v\n", conn.data)
+			// 用户连接分组时
+			fmt.Printf("AAAAAA conn handshake room %v\n", conn.data.Room)
+			conn.room, err = strconv.Atoi(conn.data.Room)
+			if err != nil {
+				log.Fatalf("handshake room %v error", conn.room)
+			}
+			conn.register()
 		case typeLogin:
+			fmt.Printf("AAAAAA conn login\n")
 			conn.data.Content = conn.data.User
 			fmt.Println(conn.data)
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 		case typeLogout:
+			fmt.Printf("AAAAAA conn logout\n")
 			conn.data.Content = conn.data.User
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
@@ -108,14 +119,29 @@ func (conn *connection) write() {
 	conn.conn.Close()
 }
 
-func (conn *connection) register() {
+func (conn *connection) register() error {
+	fmt.Println("registerrrr ", conn.room)
 	if conn.room <= 0 {
-		return
+		return errors.New("room id <= 0")
 	}
+	fmt.Println("registerrrr ", rHub.roomMap)
+	// 内存里没有房间
 	if _, ok := rHub.roomMap[conn.room]; !ok {
-		return
+		// 创建connhub
+		cHub := newConnHub()
+		// connHub加入roomHub
+		err := rHub.addConnHub(conn.room, cHub)
+
+		if err != nil {
+			close(cHub.registerConn)
+			close(cHub.unRegisterConn)
+			return err
+		}
+		// 起一个协程监听
+		go cHub.run()
 	}
 	rHub.roomMap[conn.room].registerConn <- conn
+	return nil
 }
 
 func (conn *connection) unRegister() {
@@ -139,12 +165,15 @@ func (conn *connection) broadcast(data []byte) {
 
 }
 
-var cHub = connHub{
-	connections:    make(map[*connection]userName),
-	broadcast:      make(chan []byte),
-	registerConn:   make(chan *connection),
-	unRegisterConn: make(chan *connection),
-	mu:             sync.Mutex{},
+func newConnHub() (cHub *connHub) {
+	cHub = &connHub{
+		connections:    make(map[*connection]userName),
+		broadcast:      make(chan []byte),
+		registerConn:   make(chan *connection),
+		unRegisterConn: make(chan *connection),
+		mu:             sync.Mutex{},
+	}
+	return
 }
 
 var rHub = roomHub{
@@ -152,31 +181,41 @@ var rHub = roomHub{
 	roomMap: make(map[int]*connHub),
 }
 
+func (rh *roomHub) addConnHub(roomId int, cHub *connHub) error {
+	rh.mu.Lock()
+	defer rh.mu.Unlock()
+	// 加锁后再检查
+	if _, ok := rHub.roomMap[roomId]; ok {
+		return errors.New("roomHub have connHub")
+	}
+	rHub.roomMap[roomId] = cHub
+	return nil
+}
+
 func (ch *connHub) run() {
 
 	for {
 		select {
 		case conn := <-ch.registerConn:
+			fmt.Printf("AAAAAA chub registerConn\n")
 			uname := userName(conn.data.User)
 			ch.connections[conn] = uname
 			conn.data.Type = typeHandshake
 			sigleData, _ := json.Marshal(conn.data)
 			conn.send <- sigleData
 		case conn := <-ch.unRegisterConn:
+			fmt.Printf("AAAAAA chub unregisterConn\n")
 			if _, ok := ch.connections[conn]; ok {
 				delete(ch.connections, conn)
 				close(conn.send)
 			}
 		case data := <-ch.broadcast:
+			fmt.Printf("AAAAAA chub broadcast\n")
 			for c := range ch.connections {
 				c.send <- data
 			}
 		}
 	}
-}
-
-func RunConnHub() {
-	cHub.run()
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {

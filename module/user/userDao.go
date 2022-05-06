@@ -22,7 +22,7 @@ func getOneByUname(uname string) (c user, err error) {
 	if err != nil {
 		return
 	}
-	row := db.QueryRow("SELECT uid, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uname=$1", uname)
+	row := db.QueryRow("SELECT uid, passwd, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uname=$1", uname)
 	err = row.Scan(&c.uid, &c.passwd, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
 	return
 }
