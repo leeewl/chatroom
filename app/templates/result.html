@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>结果</title>
 </head>
 <body>
-    <div>用户不存在</div>
+    <div>{{.result}}</div>
+    <br/>
+    <br/>
+
+    <a href="http://{{.host}}:{{.port}}/login">
+        <button>返回</button>
+    </a>
 </body>
 </html>

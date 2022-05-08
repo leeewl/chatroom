@@ -1,13 +1,15 @@
 package room
 
 import (
-	posgre "chatroom/lib/db/postgre"
+	"chatroom/app/injectors"
+	"chatroom/infrastructure"
 	"fmt"
 )
 
 func getOneRoomById(id int) (r room, err error) {
 	r = room{}
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}
@@ -18,7 +20,8 @@ func getOneRoomById(id int) (r room, err error) {
 
 func getOneRoomByName(name string) (r room, err error) {
 	r = room{}
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}
@@ -28,7 +31,8 @@ func getOneRoomByName(name string) (r room, err error) {
 }
 
 func (r *room) Update() (err error) {
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}
@@ -55,7 +59,8 @@ func Delete(id int) (err error) {
 */
 
 func Insert(r room) (err error) {
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}

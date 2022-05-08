@@ -1,6 +1,10 @@
 package user
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 type userList map[int]*user
 
@@ -26,6 +30,37 @@ func DelUser(uid int) bool {
 		delete(users, uid)
 	}
 	return true
+}
+
+func CreateUser(username, userpasswd string) error {
+	u := user{
+		uname:         username,
+		passwd:        userpasswd,
+		create_time:   int(time.Now().Unix()),
+		ban_chat_time: 0,
+		ban_time:      0,
+	}
+
+	return Insert(u)
+}
+
+func CheckUserLogin(username, userpasswd string) (uid int, err error) {
+	u, err := getOneByUname(username)
+	uid = 0
+
+	if u == (user{}) {
+		err = errors.New("用户不存在")
+	}
+
+	if u.uid == 0 {
+		err = errors.New("用户不存在")
+	}
+
+	if u.passwd != userpasswd {
+		err = errors.New("密码错误")
+	}
+	uid = u.uid
+	return
 }
 
 func GetUidByUname(uname string) int {

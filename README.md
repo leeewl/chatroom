@@ -5,6 +5,7 @@
 先登录界面，登陆后进入聊天界面，然后选择房间
 
 ## 界面
+现在重点是后端，前端走极丑风
 ![](https://github.com/leeewl/chatroom/blob/master/images/interface_chat.png)
 
 ## 进度

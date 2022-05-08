@@ -1,0 +1,20 @@
+#application
+app:
+ environment: dev
+ http_host: localhost
+ http_port: 18080
+
+#postgresql
+postgresqldb:
+ driver: postgres
+ db_name: chatroom
+ db_host: localhost
+ db_port: 5432
+ dial_timeout: 10
+ max_idle_conns: 10
+ max_open_conns: 10
+ conn_max_life_time:
+ username: gopher
+ password: nopanic
+ ssl_mode:
+ uri:

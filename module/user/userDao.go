@@ -1,13 +1,15 @@
 package user
 
 import (
-	posgre "chatroom/lib/db/postgre"
+	"chatroom/app/injectors"
+	"chatroom/infrastructure"
 	"fmt"
 )
 
 func getOneById(id int) (c user, err error) {
 	c = user{}
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}
@@ -18,17 +20,24 @@ func getOneById(id int) (c user, err error) {
 
 func getOneByUname(uname string) (c user, err error) {
 	c = user{}
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	fmt.Println(conf)
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
+		fmt.Println("NNNNNIL 1")
 		return
 	}
+	fmt.Println("NNNNNIL 2")
 	row := db.QueryRow("SELECT uid, passwd, uname, create_time, ban_chat_time, ban_time FROM t_user WHERE uname=$1", uname)
+	fmt.Println("NNNNNIL 3")
 	err = row.Scan(&c.uid, &c.passwd, &c.uname, &c.create_time, &c.ban_chat_time, &c.ban_time)
+	fmt.Println("NNNNNIL 4", c)
 	return
 }
 
 func (u *user) Update() (err error) {
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}
@@ -54,7 +63,8 @@ func Delete(id int) (err error) {
 */
 
 func Insert(u user) (err error) {
-	db, err := posgre.ConDb()
+	conf := injectors.GetConfig()
+	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
 		return
 	}

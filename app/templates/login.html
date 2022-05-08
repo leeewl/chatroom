@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>登录和注册</title>
+    </head>
+    <body>
+        <form action="http://{{.host}}:{{.port}}/chat" method="post" enctype="application/x-www-formurlencoded">
+            <table>
+                <tr>
+                    <td><div>用户名:</div></td>
+                    <td><input type="text" name="name" /></td>
+                </tr>
+                <tr><td><div>密码:</div></td>
+                    <td><input type="text" name="password" /></td>
+                </tr>
+                <tr><td><div>登录</div></td>
+                    <td><input type="submit" /></td>
+                </tr>
+            </table>
+        </form>
+        <form action="http://{{.host}}:{{.port}}/signup" method="post" enctype="application/x-www-formurlencoded">
+            <table>
+                <tr>
+                    <td><div>用户名:</div></td>
+                    <td><input type="text" name="name" /></td>
+                </tr>
+                <tr><td><div>密码:</div></td>
+                    <td><input type="text" name="password" /></td>
+                </tr>
+                <tr><td><div>注册</div></td>
+                    <td><input type="submit" /></td>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>

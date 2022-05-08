@@ -57,7 +57,7 @@
             console.log("AAAAAAAAAA");
             //conn = new WebSocket("ws://{{$}}/ws");
             // 名字和组传过去
-            conn = new WebSocket("ws://localhost:8080/ws?name=" + uname + "&uid=" + uid);
+            conn = new WebSocket("ws://{{.ip}}:{{.port}}/ws?name=" + uname + "&uid=" + uid);
             conn.onclose = function (evt) {
                 appendLog($("<div><b>Connection closed.</b></div>"))
             }
