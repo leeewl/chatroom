@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"chatroom/module/chat"
 	"chatroom/module/room"
 	"encoding/json"
 	"errors"
@@ -31,13 +32,16 @@ const (
 
 // 前后端传送的数据结构
 type Data struct {
-	Content  string   `json:"content"`
-	Type     string   `json:"type"`
-	Ip       string   `json:"ip"`
-	From     string   `json:"from"`
-	User     string   `json:"user"`
-	Room     string   `json:"room"` //当前房间
-	UserList []string `json:"user_list"`
+	Content     string   `json:"content"`
+	Type        string   `json:"type"`
+	Ip          string   `json:"ip"`
+	From        string   `json:"from"`
+	User        string   `json:"user"`
+	Uid         string   `json:"uid"`
+	Room        string   `json:"room"`      //当前房间
+	RoomName    string   `json:"room_name"` //当前房间名
+	UserList    []string `json:"user_list"`
+	MessageList []string `jsong:"message_list"`
 }
 
 type connection struct {
@@ -82,6 +86,11 @@ func (conn *connection) read() {
 		case typeUser:
 			fmt.Printf("AAAAAA conn user\n")
 			conn.data.From = conn.data.User
+
+			myroom, _ := strconv.Atoi(conn.data.Room)
+			myuid, _ := strconv.Atoi(conn.data.Uid)
+
+			chat.SaveMessage(myuid, conn.data.User, myroom, conn.data.Content)
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 		case typeHandshake:
@@ -93,12 +102,12 @@ func (conn *connection) read() {
 				log.Fatalf("handshake room %v error", conn.room)
 			}
 			// 数据库中有分组
-			r := room.GetRoom(conn.room)
-			if r == nil {
+			rname := room.GetRoomName(conn.room)
+			if rname == "" {
 				// 没有分组，进入失败
 				conn.handShakeFail()
-
 			} else {
+				conn.data.RoomName = rname
 				conn.register()
 			}
 		case typeLogin:

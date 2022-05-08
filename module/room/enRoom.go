@@ -6,19 +6,19 @@ type roomList map[int]*room
 
 var rooms = make(roomList)
 
-func GetRoom(rid int) *room {
+func GetRoomName(rid int) string {
 	fmt.Println(rooms)
 	if _, ok := rooms[rid]; ok {
-		return rooms[rid]
+		return rooms[rid].name
 	}
 
 	r, err := newRoom(rid)
 	if err != nil {
-		return nil
+		return ""
 	}
 
 	rooms[rid] = &r
-	return rooms[rid]
+	return rooms[rid].name
 }
 
 func DelRoom(rid int) bool {

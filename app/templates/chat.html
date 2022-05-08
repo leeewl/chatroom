@@ -9,10 +9,12 @@
         <div class="app">
             <div style="display:inline-block;">User name is: </div>
             <div id="user_name" style="display:inline-block;margin-left:10px;">{{.uname}}</div>
-        </div>
-        <div class="app">
-            <div style="display:inline-block;">User id is: </div>
+            <div style="display:inline-block;">     User id is: </div>
             <div id="uid" style="display:inline-block;margin-left:10px;">{{.uid}}</div>
+            <div style="display:inline-block;">     room name is: </div>
+            <div id="my_room_name" style="display:inline-block;margin-left:10px;"></div>
+            <div style="display:inline-block;">     room id is: </div>
+            <div id="my_room" style="display:inline-block;margin-left:10px;"></div>
         </div>
     </form>
     <form id="messageform">
@@ -41,6 +43,9 @@
             var user_name = $("#user_name");
             var uname = document.getElementById("user_name").innerHTML;
             var uid = document.getElementById("uid").innerHTML;
+            var my_room_name_element = document.getElementById("my_room_name");
+            var my_room_element = document.getElementById("my_room");
+            //my_room_name_element.innerText = "hhhhh"
 
             // 打开页面，建立websocket连接
             console.log("AAAAAAAAAA");
@@ -74,6 +79,10 @@
                         break;
                     case 'handshake':
                         console.log("in handshake");
+                        // 设置显示标签
+                        my_room_name_element.innerText = msg.room_name;
+                        my_room_element.innerText = msg.room;
+
                         var user_info = { 'type': 'login', 'content': uname };
                         console.log(user_info);
                         sendMsg(user_info);
@@ -131,7 +140,7 @@
                 if (!msg.val()) {
                     return false;
                 }
-                var sendInfo = { "content": msg.val(), "type": "user" , "user":uname};
+                var sendInfo = { "content": msg.val(), "type": "user" , "user":uname,"uid":uid, "room":my_room_element.innerText};
                 sendMsg(sendInfo);
                 msg.val("");
                 return false;
