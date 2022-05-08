@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"chatroom/module/room"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,11 +20,13 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	typeSystem    = "system"
-	typeHandshake = "handshake"
-	typeLogin     = "login"
-	typeLogout    = "logout"
-	typeUser      = "user"
+	typeSystem        = "system"
+	typeHandshake     = "handshake"
+	typeHandshakeFail = "handshakefail"
+	typeLogin         = "login"
+	typeLogout        = "logout"
+	typeUser          = "user"
+	typeCreateRoom    = "createroom"
 )
 
 // 前后端传送的数据结构
@@ -89,7 +92,15 @@ func (conn *connection) read() {
 			if err != nil {
 				log.Fatalf("handshake room %v error", conn.room)
 			}
-			conn.register()
+			// 数据库中有分组
+			r := room.GetRoom(conn.room)
+			if r == nil {
+				// 没有分组，进入失败
+				conn.handShakeFail()
+
+			} else {
+				conn.register()
+			}
 		case typeLogin:
 			fmt.Printf("AAAAAA conn login\n")
 			conn.data.Content = conn.data.User
@@ -102,6 +113,9 @@ func (conn *connection) read() {
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 			conn.unRegister()
+		case typeCreateRoom:
+			// 创建分组
+			// 暂时不做
 		default:
 			log.Fatalln(" other type ", conn.data.Type)
 		}
@@ -163,6 +177,13 @@ func (conn *connection) broadcast(data []byte) {
 	}
 	rHub.roomMap[conn.room].broadcast <- data
 
+}
+
+// 进入房间失败，通知前端
+func (conn *connection) handShakeFail() {
+	conn.data.Type = typeHandshakeFail
+	sigleData, _ := json.Marshal(conn.data)
+	conn.send <- sigleData
 }
 
 func newConnHub() (cHub *connHub) {

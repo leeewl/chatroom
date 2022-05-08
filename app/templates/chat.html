@@ -78,6 +78,9 @@
                         console.log(user_info);
                         sendMsg(user_info);
                         return;
+                    case 'handshakefail':
+                        alert('分组不存在');
+                        return;
                     case 'login':
                     case 'logout':
                         user_name = msg.content;
