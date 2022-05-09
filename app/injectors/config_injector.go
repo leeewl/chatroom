@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// 配置
 var conf *config.GeneralConfig
 
 func GetConfig() *config.GeneralConfig {

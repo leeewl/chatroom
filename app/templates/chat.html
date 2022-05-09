@@ -40,16 +40,19 @@
             var msg = $("#msg");
             var room_id = $("#room_id");
             var log = $("#log");
+            var uuserlist = $('#userlist');
             var user_name = $("#user_name");
             var uname = document.getElementById("user_name").innerHTML;
             var uid = document.getElementById("uid").innerHTML;
             var my_room_name_element = document.getElementById("my_room_name");
             var my_room_element = document.getElementById("my_room");
             var log_element = document.getElementById("log");
+            var userlist_element = document.getElementById("userlist");
+
+            var name_list
             //my_room_name_element.innerText = "hhhhh"
 
             // 打开页面，建立websocket连接
-            console.log("AAAAAAAAAA");
             if (!window["WebSocket"]) {
                 appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
                 return
@@ -60,7 +63,6 @@
                 conn.close()
             }
             */
-            console.log("AAAAAAAAAA");
             //conn = new WebSocket("ws://{{$}}/ws");
             // 名字和组传过去
             conn = new WebSocket("ws://{{.ip}}:{{.port}}/ws?name=" + uname + "&uid=" + uid);
@@ -69,7 +71,7 @@
             }
             conn.onmessage = function (evt) {
                 var msg = JSON.parse(evt.data);
-                var sender, user_name, name_list, change_type;
+                var sender, user_name, change_type;
 
                 switch (msg.type) {
                     case 'system':
@@ -79,24 +81,30 @@
                         sender = msg.from + ":";
                         break;
                     case 'handshake':
-                        console.log("in handshake");
                         // 设置显示标签
                         my_room_name_element.innerText = msg.room_name;
                         my_room_element.innerText = msg.room;
                         initMessageLog(msg.message_list)
-                        console.log(msg.message_list);
+                        initUserList(msg.user_list)
+                        name_list = msg.user_list
                         var user_info = { 'type': 'login', 'content': uname };
-                        console.log(user_info);
                         sendMsg(user_info);
                         return;
                     case 'handshakefail':
                         alert('分组不存在');
                         return;
                     case 'login':
+                        user_name = msg.content;
+                        name_list = nameListAdd(name_list, user_name);
+                        change_type = msg.type;
+                        initUserList(name_list);
+                        dealUser(user_name, change_type, name_list);
+                        return;
                     case 'logout':
                         user_name = msg.content;
-                        name_list = msg.user_list;
+                        name_list = nameListSub(name_list,user_name);
                         change_type = msg.type;
+                        initUserList(name_list);
                         dealUser(user_name, change_type, name_list);
                         return;
                 }
@@ -107,19 +115,19 @@
             }
 
             function dealUser(user_name, type, name_list) {
+                //var user_list = document.getElementById("user_list");
                 /*
-                var user_list = document.getElementById("user_list");
-                while (user_list.hasChildNodes()) {
-                    user_list.removeChild(user_list.firstChild);
+                while (userlist_element.hasChildNodes()) {
+                    userlist_element.removeChild(userlist_element.firstChild);
                 }
                 for (var index in name_list) {
                     var user = document.createElement("p");
                     user.innerHTML = name_list[index];
-                    user_list.appendChild(user);
+                    userlist_element.appendChild(user);
                 }
-
-                user_list.scrollTop = user_list.scrollHeight;
+                userlist_element.scrollTop = userlist_element.scrollHeight;
                 */
+
                 var change = type == 'login' ? '上线' : '下线';
                 var data = '系统消息 :' + user_name + ' 已' + change;
                 appendLog($("<div/>").text(data))
@@ -135,6 +143,16 @@
                 }
             }
 
+            function appendUserList(msg) {
+                var d = uuserlist[0]
+                var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
+                msg.appendTo(uuserlist)
+                if (doScroll) {
+                    d.scrollTop = d.scrollHeight - d.clientHeight;
+                }
+            }
+
+
             $("#sendform").submit(function () {
                 if (!conn) {
                     return false;
@@ -142,6 +160,7 @@
                 if (!msg.val()) {
                     return false;
                 }
+
                 var sendInfo = { "content": msg.val(), "type": "user" , "user":uname,"uid":uid, "room":my_room_element.innerText};
                 sendMsg(sendInfo);
                 msg.val("");
@@ -156,12 +175,33 @@
                 if (!room_id.val()) {
                     return false;
                 }
+
+                // 不能进入同一个房间
+                if (room_id.val() == my_room_element.innerText){
+                    alert("你已经在房间里");
+                }
+
+                // 已经在房间，需要先退出
+                if(my_room_element.innerText){
+                    var send_leave = {"type": "logout", "user":uname};
+                    sendMsg(send_leave);
+                    my_room_element.innerText = "";
+                }
+                sendHandShake()
+                /*
                 var sendInfo = { "room": room_id.val(), "type": "handshake" , "user":uname};
                 console.log(sendInfo);
                 sendMsg(sendInfo);
                 room_id.val("");
+                */
                 return false;
             });
+
+            function sendHandShake(){
+                var sendInfo = { "room": room_id.val(), "type": "handshake" , "user":uname};
+                sendMsg(sendInfo);
+                room_id.val("");
+            }
 
             function sendMsg(msg) {
                 var data = JSON.stringify(msg);
@@ -175,7 +215,38 @@
                     appendLog($("<div/>").text(message_list[index]));
                 }
             }
+            function initUserList(user_list){
+                uuserlist.val("");
+                userlist_element.innerText = "在线玩家 : ";
+                for (var index in user_list) {
+                    appendUserList($("<div/>").text(user_list[index]));
+                }
+            }
 
+            function nameListAdd(name_list,user_name){
+                ret = [];
+                add = true;
+                for (var index in name_list) {
+                    ret.push(name_list[index]);
+                    if (name_list[index] == user_name) {
+                        add = false;
+                    }
+                }
+                if(add){
+                    ret.push(user_name);
+                }
+                return ret;
+            }
+
+            function nameListSub(name_list,user_name){
+                ret = [];
+                for (var index in name_list) {
+                    if (name_list[index] != user_name) {
+                        ret.push(name_list[index]);
+                    }
+                }
+                return ret;
+            }
         });
     </script>
     <style type="text/css">

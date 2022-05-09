@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// 把全局配置传进来
 type chatHandler struct {
 	generalConfig *config.GeneralConfig
 }
@@ -67,6 +68,7 @@ func (ch *chatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, tmpInfo)
 }
 
+// 注册路由
 func registerChatRoute(gConfig *config.GeneralConfig) {
 
 	ch := chatHandler{

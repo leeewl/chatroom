@@ -5,7 +5,6 @@ import (
 	"chatroom/module/room"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -52,11 +51,10 @@ type connection struct {
 	//room_list []int
 }
 
-type userName string
-
 // 管理链接的hub
 type connHub struct {
-	connections map[*connection]userName
+	// connection 和 username
+	connections map[*connection]string
 	// 广播
 	broadcast      chan []byte
 	registerConn   chan *connection
@@ -74,6 +72,7 @@ func (conn *connection) read() {
 		_, message, err := conn.conn.ReadMessage()
 		// 数据错误，下线
 		if err != nil {
+			log.Println(err.Error())
 			conn.unRegister()
 			break
 		}
@@ -84,7 +83,6 @@ func (conn *connection) read() {
 		//case typeSystem:
 
 		case typeUser:
-			fmt.Printf("AAAAAA conn user\n")
 			conn.data.From = conn.data.User
 
 			myroom, _ := strconv.Atoi(conn.data.Room)
@@ -94,12 +92,10 @@ func (conn *connection) read() {
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 		case typeHandshake:
-			fmt.Printf("AAAAAA conn handshake %v\n", conn.data)
 			// 用户连接分组时
-			fmt.Printf("AAAAAA conn handshake room %v\n", conn.data.Room)
 			conn.room, err = strconv.Atoi(conn.data.Room)
 			if err != nil {
-				log.Fatalf("handshake room %v error", conn.room)
+				log.Printf("handshake room %v error", conn.room)
 			}
 			// 数据库中有分组
 			rname := room.GetRoomName(conn.room)
@@ -111,13 +107,10 @@ func (conn *connection) read() {
 				conn.register()
 			}
 		case typeLogin:
-			fmt.Printf("AAAAAA conn login\n")
 			conn.data.Content = conn.data.User
-			fmt.Println(conn.data)
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
 		case typeLogout:
-			fmt.Printf("AAAAAA conn logout\n")
 			conn.data.Content = conn.data.User
 			broadcastData, _ := json.Marshal(conn.data)
 			conn.broadcast(broadcastData)
@@ -126,7 +119,7 @@ func (conn *connection) read() {
 			// 创建分组
 			// 暂时不做
 		default:
-			log.Fatalln(" other type ", conn.data.Type)
+			log.Println(" other type ", conn.data.Type)
 		}
 	}
 }
@@ -135,6 +128,7 @@ func (conn *connection) write() {
 	for message := range conn.send {
 		err := conn.conn.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
+			log.Printf("write error data %v conn %v ", conn.data, conn.conn)
 			conn.unRegister()
 			break
 		}
@@ -143,21 +137,18 @@ func (conn *connection) write() {
 }
 
 func (conn *connection) register() error {
-	fmt.Println("registerrrr ", conn.room)
 	if conn.room <= 0 {
 		return errors.New("room id <= 0")
 	}
-	fmt.Println("registerrrr ", rHub.roomMap)
 	// 内存里没有房间
 	if _, ok := rHub.roomMap[conn.room]; !ok {
 		// 创建connhub
 		cHub := newConnHub()
-		fmt.Printf("reeee chub %v", cHub)
 		// connHub加入roomHub
 		err := rHub.addConnHub(conn.room, cHub)
 
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 			close(cHub.registerConn)
 			close(cHub.unRegisterConn)
 			return err
@@ -187,7 +178,6 @@ func (conn *connection) broadcast(data []byte) {
 		return
 	}
 	rHub.roomMap[conn.room].broadcast <- data
-
 }
 
 // 进入房间失败，通知前端
@@ -199,7 +189,8 @@ func (conn *connection) handShakeFail() {
 
 func newConnHub() (cHub *connHub) {
 	cHub = &connHub{
-		connections:    make(map[*connection]userName),
+		// string 是 username
+		connections:    make(map[*connection]string),
 		broadcast:      make(chan []byte),
 		registerConn:   make(chan *connection),
 		unRegisterConn: make(chan *connection),
@@ -224,29 +215,34 @@ func (rh *roomHub) addConnHub(roomId int, cHub *connHub) error {
 	return nil
 }
 
+func (ch *connHub) getUserList() []string {
+	user_list := make([]string, 2)
+	for _, v := range ch.connections {
+		user_list = append(user_list, v)
+	}
+	return user_list
+}
+
 func (ch *connHub) run() {
 
 	for {
 		select {
 		case conn := <-ch.registerConn:
-			fmt.Printf("AAAAAA chub registerConn\n")
-			uname := userName(conn.data.User)
+			uname := conn.data.User
 			ch.connections[conn] = uname
 			conn.data.Type = typeHandshake
 			// 从t_chat表里面找最新50条数据
 			roomId, _ := strconv.Atoi(conn.data.Room)
 			conn.data.MessageList = chat.GetLogInMessages(roomId)
-			fmt.Println("BBBBB", conn.data.MessageList)
+			conn.data.UserList = ch.getUserList()
 			sigleData, _ := json.Marshal(conn.data)
 			conn.send <- sigleData
 		case conn := <-ch.unRegisterConn:
-			fmt.Printf("AAAAAA chub unregisterConn\n")
 			if _, ok := ch.connections[conn]; ok {
 				delete(ch.connections, conn)
-				close(conn.send)
+				//close(conn.send)
 			}
 		case data := <-ch.broadcast:
-			fmt.Printf("AAAAAA chub broadcast\n")
 			for c := range ch.connections {
 				c.send <- data
 			}
@@ -254,8 +250,10 @@ func (ch *connHub) run() {
 	}
 }
 
+// websocket的handler
 func wsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("in wsHandler")
+	// 日志带时间和文件
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	url := r.URL
 	query := url.Query()
@@ -287,6 +285,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		broadcastData, _ := json.Marshal(conn.data)
 		conn.broadcast(broadcastData)
 		conn.unRegister()
+		close(conn.send)
 	}()
 
 	go conn.write()

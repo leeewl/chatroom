@@ -56,6 +56,7 @@ func (sh *signupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 注册的路由
 func registerSignUpRoute(Config *config.GeneralConfig) {
 
 	sh := signupHandler{
