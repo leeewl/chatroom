@@ -2,7 +2,7 @@
 
 ## 项目介绍
 这是一款基于websocket的聊天软件，后端需要部署到服务器，使用golang + postgresql开发。
-前端用浏览器打开，从http://域名或ip:端口/login进入。域名，端口要修改config.yml文件。
+前端用浏览器打开，从`http://域名或ip:端口/login`进入。域名，端口要修改config.yml文件。
 
 
 ## 用户使用说明
