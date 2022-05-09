@@ -1,16 +1,26 @@
-# 做一个聊天室的项目
+# 一个聊天室的项目
 
-## 玩家登录的流程
+## 项目介绍
+这是一款基于websocket的聊天软件，后端需要部署到服务器，使用golang + postgresql开发。
+前端用浏览器打开，从http://域名或ip:端口/login进入。域名，端口要修改config.yml文件。
 
-先登录界面，登陆后进入聊天界面，然后选择房间
+
+## 用户使用说明
+
+* 用户可以在login界面注册账号，然后登录
+* 登陆后会跳转到聊天界面
+* 线进入房间，再发送聊天信息
 
 ## 界面
+聊天界面介绍
+![](https://github.com/leeewl/chatroom/blob/master/images/introduce.png)
 现在重点是后端，前端走极丑风
 ![](https://github.com/leeewl/chatroom/blob/master/images/interface_chat.png)
 
+
 ## 进度
 
-玩家可以进入不同的聊天室聊天
+玩家可以进入不同的聊天室聊天,可以显示在线玩家。
 
 ## 部署
 
