@@ -45,6 +45,7 @@
             var uid = document.getElementById("uid").innerHTML;
             var my_room_name_element = document.getElementById("my_room_name");
             var my_room_element = document.getElementById("my_room");
+            var log_element = document.getElementById("log");
             //my_room_name_element.innerText = "hhhhh"
 
             // 打开页面，建立websocket连接
@@ -82,7 +83,8 @@
                         // 设置显示标签
                         my_room_name_element.innerText = msg.room_name;
                         my_room_element.innerText = msg.room;
-
+                        initMessageLog(msg.message_list)
+                        console.log(msg.message_list);
                         var user_info = { 'type': 'login', 'content': uname };
                         console.log(user_info);
                         sendMsg(user_info);
@@ -165,6 +167,15 @@
                 var data = JSON.stringify(msg);
                 conn.send(data);
             }
+
+            function initMessageLog(message_list){
+                log.val("");
+                log_element.innerText = "";
+                for (var index in message_list) {
+                    appendLog($("<div/>").text(message_list[index]));
+                }
+            }
+
         });
     </script>
     <style type="text/css">

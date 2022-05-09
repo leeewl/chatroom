@@ -41,7 +41,7 @@ type Data struct {
 	Room        string   `json:"room"`      //当前房间
 	RoomName    string   `json:"room_name"` //当前房间名
 	UserList    []string `json:"user_list"`
-	MessageList []string `jsong:"message_list"`
+	MessageList []string `json:"message_list"`
 }
 
 type connection struct {
@@ -152,10 +152,12 @@ func (conn *connection) register() error {
 	if _, ok := rHub.roomMap[conn.room]; !ok {
 		// 创建connhub
 		cHub := newConnHub()
+		fmt.Printf("reeee chub %v", cHub)
 		// connHub加入roomHub
 		err := rHub.addConnHub(conn.room, cHub)
 
 		if err != nil {
+			fmt.Println(err.Error())
 			close(cHub.registerConn)
 			close(cHub.unRegisterConn)
 			return err
@@ -231,6 +233,10 @@ func (ch *connHub) run() {
 			uname := userName(conn.data.User)
 			ch.connections[conn] = uname
 			conn.data.Type = typeHandshake
+			// 从t_chat表里面找最新50条数据
+			roomId, _ := strconv.Atoi(conn.data.Room)
+			conn.data.MessageList = chat.GetLogInMessages(roomId)
+			fmt.Println("BBBBB", conn.data.MessageList)
 			sigleData, _ := json.Marshal(conn.data)
 			conn.send <- sigleData
 		case conn := <-ch.unRegisterConn:
