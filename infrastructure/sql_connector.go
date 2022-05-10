@@ -31,7 +31,6 @@ type PostgreSqlDBConfig struct {
 func ConDb(config *PostgreSqlDBConfig) (db *sql.DB, err error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		config.DBHost, config.DBPort, config.Username, config.Password, config.DBName)
-	fmt.Println(connStr)
 	db, err = sql.Open(string(config.Driver), connStr)
 	if err != nil {
 		return

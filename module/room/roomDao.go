@@ -3,7 +3,7 @@ package room
 import (
 	"chatroom/app/injectors"
 	"chatroom/infrastructure"
-	"fmt"
+	"log"
 )
 
 func getOneRoomById(id int) (r room, err error) {
@@ -62,12 +62,13 @@ func Insert(r room) (err error) {
 	conf := injectors.GetConfig()
 	db, err := infrastructure.ConDb(&conf.PostgreSqlDB)
 	if err != nil {
+		log.Println(err.Error())
 		return
 	}
-	fmt.Println(r)
 	_, err = db.Exec("Insert into t_room (name,create_time, create_uid) values ($1, $2,$3)",
 		r.name, r.create_time, r.create_uid)
 	if err != nil {
+		log.Println(err.Error())
 		return
 	}
 	return

@@ -3,7 +3,6 @@ package controller
 import (
 	"chatroom/config"
 	"chatroom/module/user"
-	"fmt"
 	"html/template"
 	"net/http"
 )
@@ -62,7 +61,6 @@ func (ch *chatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tmpInfo["ip"] = ch.generalConfig.App.HttpHost
 	tmpInfo["port"] = ch.generalConfig.App.HttpPort
 
-	fmt.Println(r.Form)
 	t := template.New("chat.html")
 	t, _ = t.ParseFiles("app/templates/chat.html")
 	t.Execute(w, tmpInfo)
